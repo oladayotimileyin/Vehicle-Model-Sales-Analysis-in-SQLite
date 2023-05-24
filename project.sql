@@ -43,6 +43,7 @@ UNION ALL
 SELECT 'Offices', (SELECT COUNT(*) FROM pragma_table_info('offices')), COUNT(*) FROM Offices;
 
 
+
 ---- Question 1 : Which Products Should We Order More of or Less of?
 --- First we find products that are low in stock
 
@@ -83,27 +84,31 @@ FROM stk_lv
 JOIN perf_lv ON stk_lv.productCode = perf_lv.productCode
 ORDER BY perf_lv.product_performance DESC;
 
-/*
+---- Products to order less of
+
 WITH stk_lv AS (
-SELECT p.productCode, p.productName, (SUM(quantityOrdered)/quantityInStock) AS stock_level
+SELECT p.productCode, p.productName, p.productLine,(SUM(quantityOrdered)/quantityInStock) AS stock_level
 FROM products p
 JOIN orderdetails o
 ON p.productCode = o.productCode
 GROUP BY p.productCode
-ORDER BY stock_level
-LIMIT 10)
+ORDER BY stock_level DESC),
 
-SELECT *
-FROM stk_lv
-WHERE stk_lv.productCode IN (
+perf_lv AS (
 SELECT p.productCode, p.productName, SUM(quantityOrdered * priceEach) AS product_performance
 FROM products p
 JOIN orderdetails o
 ON p.productCode = o.productCode
 GROUP BY p.productCode
-ORDER BY product_performance DESC
-LIMIT 10);
-*/
+ORDER BY product_performance
+LIMIT 10)
+
+SELECT stk_lv.*, perf_lv.product_performance
+FROM stk_lv
+JOIN perf_lv ON stk_lv.productCode = perf_lv.productCode
+ORDER BY perf_lv.product_performance, stk_lv.stock_level DESC;
+
+
 
 /*
 Question 2: How Should We Match Marketing and Communication Strategies to Customer Behavior?
@@ -178,9 +183,8 @@ Question !: Which products should we order more of or less of?
   
 Question 2: How should we tailor marketing and communication strategies to customer behaviors?
 Answer: Analysing the query results of top and bottom customers in terms of profit generation,
-              we need to offer loyalty rewards and priority services for our top customers to retain them.
-			  Also for bottom customers we need to solicit feedback to better understand their preferences, 
-			  expected pricing, discount and offers to increase our sales
+         we need to offer loyalty rewards and priority services for our top customers to retain them.
+Also for bottom customers we need to solicit feedback to better understand their preferences, expected pricing, discount and offers to increase our sales
 			  
 Question 3: How much can we spend on acquiring new customers?
 Answer 3: The average customer liftime value of our store is $ 39,040. This means for every new customer we make profit of 39,040 dollars. 
